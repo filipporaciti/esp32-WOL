@@ -1,0 +1,25 @@
+menu "WiFi Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default ""
+        help
+            Home network WiFi SSID
+
+    config WIFI_PASSWORD
+        string "WiFi password"
+        default ""
+        help
+            Home network WiFi password
+
+endmenu
+
+menu "WoL Configuration"
+
+    config DESTINATION_MAC_ADDRESS
+        string "Destination MAC address"
+        default "112233445566"
+        help 
+            ESP32 wil send WoL packet to the devices that have this MAC address
+
+endmenu

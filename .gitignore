@@ -1,0 +1,5 @@
+.DS_Store
+sdkconfig
+sdkconfig.old
+build/
+log.*

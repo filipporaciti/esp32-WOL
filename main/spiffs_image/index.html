@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1 style="text-align: center;">esp32-WOL</h1>
+    <p>State: off</p>
+      <p style="margin: auto; float: left;">Target MAC address (length = 12):</p>
+      <input id="target_mac" type="text" size="12">
+      <input type="button" value="update" onclick="update_server_mac()">
+    <br>
+    <br>
+    <button style="width: 120px; height: 30px; float: left;" onclick="power_on_request()">Power ON</button>
+
+    <script>
+        refresh_local_mac()
+
+        function update_server_mac() {
+            fetch("http://192.168.1.195/mac", {
+                method: "POST",
+                body: document.getElementById("target_mac").value
+            })
+            refresh_local_mac()
+        }
+        function refresh_local_mac() {
+            fetch('http://192.168.1.195/mac')
+            .then(response => response.json())
+            .then((response) => {
+                document.getElementById("target_mac").value = response.mac
+            })
+        }
+        function power_on_request(){
+            fetch("http://192.168.1.195/", {
+                method: "POST"
+            })
+        }
+    </script>
+
+</body>
+</html>

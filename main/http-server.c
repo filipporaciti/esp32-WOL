@@ -43,8 +43,6 @@ void get_index_site() {
         ESP_LOGI("Http server", "Partition size: total: %d, used: %d", total, used);
     }
 
-    FILE *fptr;
-
     // Open a file in read mode
     FILE* f = fopen("/storage/index.html", "r");
     if (f == NULL) {
@@ -82,7 +80,6 @@ void write_mac_address(nvs_handle_t nvs_handle, char new_mac[]) {
 
 
 esp_err_t home_get_handler(httpd_req_t *req){
-    get_index_site();
 
 	ESP_LOGI("Http server", "Http request: \n\turl: \"/\" \n\tmethod: GET\n");
 
@@ -214,6 +211,7 @@ void update_mac_address(nvs_handle_t nvs_handle) {
 
 void http_server_start(nvs_handle_t nvs_handle){
 
+    get_index_site();
 	update_mac_address(nvs_handle);
 
 	httpd_uri_t home_get_uri = {

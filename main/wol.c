@@ -13,7 +13,7 @@ esp_err_t send_wol_packet(char d_mac[12]) {
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock < 0) {
         ESP_LOGE("WOL", "Unable to create socket");
-        return NULL;
+        return ESP_OK;
     }
 
     struct sockaddr_in dest_addr;
@@ -48,5 +48,5 @@ esp_err_t send_wol_packet(char d_mac[12]) {
 
     close(sock);
 
-    return NULL;
+    return ESP_OK;
 }

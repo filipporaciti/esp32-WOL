@@ -18,21 +18,21 @@
         refresh_local_mac()
 
         function update_server_mac() {
-            fetch("http://192.168.1.195/mac", {
+            fetch("/mac", {
                 method: "POST",
                 body: document.getElementById("target_mac").value
             })
             refresh_local_mac()
         }
         function refresh_local_mac() {
-            fetch('http://192.168.1.195/mac')
+            fetch('/mac')
             .then(response => response.json())
             .then((response) => {
                 document.getElementById("target_mac").value = response.mac
             })
         }
         function power_on_request(){
-            fetch("http://192.168.1.195/", {
+            fetch("/", {
                 method: "POST"
             })
         }

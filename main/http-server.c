@@ -2,12 +2,9 @@
 #include <stdio.h>
 #include "wol.c"
 #include "nvs.h"
-#include "esp_wifi.h"
 #include "esp_spiffs.h"
 
-
 char home_http_site[1300];
-
 
 #define DESTINATION_MAC_ADDRESS CONFIG_DESTINATION_MAC_ADDRESS
 char dest_mac_addr[12] = DESTINATION_MAC_ADDRESS;

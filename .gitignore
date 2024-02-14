@@ -3,3 +3,5 @@ sdkconfig
 sdkconfig.old
 build/
 log.*
+managed_components
+dependencies.lock

@@ -27,7 +27,7 @@ cd esp32-WOL
 ```
 ### Setup
 - #### Target MAC address (Wake on Lan)
-You can configure it from the integrated website (after build) or from menuconfig; from terminal run `idf.py menuconfig` &rarr; `WoL Configuration` &rarr; `Destination MAC address`
+You can configure it from the integrated website (port 80) or from menuconfig; from terminal run `idf.py menuconfig` &rarr; `WoL Configuration` &rarr; `Destination MAC address`
 
 - #### WiFi SSID and password
 You'll configure it when you have to connect your ESP32 with ESP RainMaker app

@@ -2,7 +2,7 @@
 #include "esp_log.h"
 
 
-
+/* Send Wake On Lan packet to d_mac (parameter) target */
 esp_err_t send_wol_packet(char d_mac[12]) {
 
     char dest_mac[13];
@@ -11,12 +11,14 @@ esp_err_t send_wol_packet(char d_mac[12]) {
 
    	ESP_LOGI("WOL", "Sending WoL packet to %s", dest_mac);
 
+    /* Create a socket */
     int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock < 0) {
         ESP_LOGE("WOL", "Unable to create socket");
         return ESP_OK;
     }
 
+    /* Setup the socket */
     struct sockaddr_in dest_addr;
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port = htons(9); // port 9

@@ -27,15 +27,15 @@ esp_rmaker_device_t *switch_device;
 
 
 /* Callback to handle commands received from the RainMaker cloud */
-static esp_err_t write_cb(const esp_rmaker_device_t *device, const esp_rmaker_param_t *param,
-            const esp_rmaker_param_val_t val, void *priv_data, esp_rmaker_write_ctx_t *ctx)
-{
+static esp_err_t write_cb(const esp_rmaker_device_t *device, const esp_rmaker_param_t *param, const esp_rmaker_param_val_t val, void *priv_data, esp_rmaker_write_ctx_t *ctx) {
+    
     if (ctx) {
         ESP_LOGI(TAG, "Received write request via : %s", esp_rmaker_device_cb_src_to_str(ctx->src));
     }
     if (strcmp(esp_rmaker_param_get_name(param), ESP_RMAKER_DEF_POWER_NAME) == 0) {
-        ESP_LOGI(TAG, "Received value = %s for %s - %s", val.val.b? "true" : "false", esp_rmaker_device_get_name(device), esp_rmaker_param_get_name(param));
+        ESP_LOGI(TAG, "Received value = %s for %s - %s", val.val.b ? "true" : "false", esp_rmaker_device_get_name(device), esp_rmaker_param_get_name(param));
 
+        /* If switch val == true then ESP32 will send WOL packet */
         if (val.val.b) {
             send_wol_packet(dest_mac_addr);
         }
@@ -45,9 +45,7 @@ static esp_err_t write_cb(const esp_rmaker_device_t *device, const esp_rmaker_pa
     return ESP_OK;
 }
 /* Event handler for catching RainMaker events */
-static void event_handler(void* arg, esp_event_base_t event_base,
-                          int32_t event_id, void* event_data)
-{
+static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
     if (event_base == RMAKER_EVENT) {
         switch (event_id) {
             case RMAKER_EVENT_INIT_DONE:
@@ -140,11 +138,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGW(TAG, "Invalid event received!");
     }
 }
-
-
-
+/* Function for start RainMaker service */
 void start_rainmaker(nvs_handle_t nvs_handle) {
 
+    /* Initialize console */
 	esp_rmaker_console_init();
 
     app_wifi_init();
@@ -155,9 +152,7 @@ void start_rainmaker(nvs_handle_t nvs_handle) {
     ESP_ERROR_CHECK(esp_event_handler_register(APP_WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(RMAKER_OTA_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 
-    /* Initialize the ESP RainMaker Agent.
-     * Note that this should be called after app_wifi_init() but before app_wifi_start()
-     * */
+    /* Initialize the ESP RainMaker Agent */
     esp_rmaker_config_t rainmaker_cfg = {
         .enable_time_sync = false,
     };
@@ -168,45 +163,30 @@ void start_rainmaker(nvs_handle_t nvs_handle) {
         abort();
     }
 
-    /* Create a Switch device.
-     * You can optionally use the helper API esp_rmaker_switch_device_create() to
-     * avoid writing code for adding the name and power parameters.
-     */
+    /* Create a Computer device */
     switch_device = esp_rmaker_device_create("Computer", ESP_RMAKER_DEVICE_SWITCH, NULL);
 
-    /* Add the write callback for the device. We aren't registering any read callback yet as
-     * it is for future use.
-     */
+    /* Add the write callback for the device */
     esp_rmaker_device_add_cb(switch_device, write_cb, NULL);
 
-    /* Add the standard name parameter (type: esp.param.name), which allows setting a persistent,
-     * user friendly custom name from the phone apps. All devices are recommended to have this
-     * parameter.
-     */
+    /* Add the standard name parameter */
     esp_rmaker_device_add_param(switch_device, esp_rmaker_name_param_create(ESP_RMAKER_DEF_NAME_PARAM, "Computer"));
 
-    /* Add the standard power parameter (type: esp.param.power), which adds a boolean param
-     * with a toggle switch ui-type.
-     */
-    // esp_rmaker_param_t *power_param = esp_rmaker_power_param_create(ESP_RMAKER_DEF_POWER_NAME, DEFAULT_POWER);
-    esp_rmaker_param_t *power_param = esp_rmaker_power_param_create(ESP_RMAKER_DEF_POWER_NAME, true);
+    /* Add the standard power parameter */
+    esp_rmaker_param_t *power_param = esp_rmaker_power_param_create(ESP_RMAKER_DEF_POWER_NAME, false);
     esp_rmaker_device_add_param(switch_device, power_param);
 
-    /* Assign the power parameter as the primary, so that it can be controlled from the
-     * home screen of the phone apps.
-     */
+    /* Assign the power parameter as the primary, so that it can be controlled from the home screen of the phone apps */
     esp_rmaker_device_assign_primary_param(switch_device, power_param);
 
     /* Add this switch device to the node */
     esp_rmaker_node_add_device(node, switch_device);
 
-    /* Enable OTA */
+    /* Enable OTA (Over-The-Air) */
     esp_rmaker_ota_enable_default();
 
     /* Enable timezone service which will be require for setting appropriate timezone
      * from the phone apps for scheduling to work correctly.
-     * For more information on the various ways of setting timezone, please check
-     * https://rainmaker.espressif.com/docs/time-service.html.
      */
     esp_rmaker_timezone_service_enable();
 

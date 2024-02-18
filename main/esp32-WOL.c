@@ -5,14 +5,15 @@
 
 
 void app_main() {
-
+   /* Initialization of nvs flash */
    esp_err_t err = nvs_flash_init();
    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
          ESP_ERROR_CHECK(nvs_flash_erase());
          err = nvs_flash_init();
    }
    ESP_ERROR_CHECK(err);
-   
+
+   /* Open nvs storage and start RainMaker and http server */
    nvs_handle_t nvs_handle;
    err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
    if (err != ESP_OK) {
@@ -22,6 +23,5 @@ void app_main() {
 
       start_rainmaker(nvs_handle);
       http_server_start(nvs_handle);
-
    }
 }

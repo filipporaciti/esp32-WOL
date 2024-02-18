@@ -9,18 +9,16 @@ char home_http_site[1300];
 #define DESTINATION_MAC_ADDRESS CONFIG_DESTINATION_MAC_ADDRESS
 char dest_mac_addr[12] = DESTINATION_MAC_ADDRESS;
 
-
+/* Get from storare section the html code that will be store in home_http_site variable */
 void get_index_site() {
-    
+    // Initialize SPIFFS partition
     esp_vfs_spiffs_conf_t spiffs = {
         .base_path = "/storage",
         .partition_label = NULL,
         .max_files = 5,
         .format_if_mount_failed = false
     };
-
     esp_err_t ret = esp_vfs_spiffs_register(&spiffs);
-
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             ESP_LOGE("Http server", "Failed to mount or format filesystem");
@@ -47,23 +45,25 @@ void get_index_site() {
         return;
     }
 
+    /* Set and copy html code from storage to home_http_site variable */
     memset(home_http_site, 0, sizeof(home_http_site));
     fread(home_http_site, 1, sizeof(home_http_site), f);
 
+    /* Close html file */
     fclose(f);
 }
-
-
+/* Write to nvs flash a new destination mac address taken from parameters */
 void write_mac_address(nvs_handle_t nvs_handle, char new_mac[]) {
+    /* Write new mac address to nvs flash */
 	esp_err_t err;
-
 	err = nvs_set_str(nvs_handle, "dest mac addr", new_mac);
     if (err != ESP_OK) {
     	ESP_LOGE("Http server", "Error (%s) NVS writing!\n", esp_err_to_name(err));
     	return;
     }
-
     ESP_LOGI("Http server", "NVS set destination address");
+
+    /* Commit all changes */
     err = nvs_commit(nvs_handle);
     ESP_LOGI("Http server", "NVS commit");
     if (err != ESP_OK) {
@@ -71,11 +71,13 @@ void write_mac_address(nvs_handle_t nvs_handle, char new_mac[]) {
     	return;
     }
 
+    /* Update actually mac address with a new one */
     memcpy(dest_mac_addr, new_mac, sizeof(dest_mac_addr));
 
 }
-
-
+/* Http get request to "/" path 
+* Return http site taken from home_http_site variable
+*/
 esp_err_t home_get_handler(httpd_req_t *req){
 
 	ESP_LOGI("Http server", "Http request: \n\turl: \"/\" \n\tmethod: GET\n");
@@ -86,12 +88,14 @@ esp_err_t home_get_handler(httpd_req_t *req){
 	}
 	return err;
 }
+/* Http post request to "/" path 
+* Send WOL packet
+*/
 esp_err_t home_post_handler(httpd_req_t *req){
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
 	ESP_LOGI("Http server", "Http request: \n\turl: \"/\" \n\tmethod: POST\n");
     send_wol_packet(dest_mac_addr);
-
 
 	esp_err_t err = httpd_resp_send(req, "OK!", HTTPD_RESP_USE_STRLEN);
 	if (err != ESP_OK) {
@@ -101,8 +105,9 @@ esp_err_t home_post_handler(httpd_req_t *req){
 	}
 	return err;
 }
-
-
+/* Http get request to "/mac" path 
+* Return actually destination mac address encoded in json
+*/
 esp_err_t mac_get_handler(httpd_req_t *req){
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
     httpd_resp_set_hdr(req, "Content-Type", "application/json");
@@ -111,6 +116,7 @@ esp_err_t mac_get_handler(httpd_req_t *req){
 
     char resp[25];
 
+    /* json encoding */
     sprintf(resp, "{\"mac\": \"%.12s\"}", dest_mac_addr);
 	esp_err_t err = httpd_resp_send(req, resp, HTTPD_RESP_USE_STRLEN);
 	if (err == ESP_OK){
@@ -119,12 +125,16 @@ esp_err_t mac_get_handler(httpd_req_t *req){
 	}
 	return err;
 }
+/* Http post request to "/mac" path 
+* Change destination mac address to a new one taken from request post data
+*/
 esp_err_t mac_post_handler(httpd_req_t *req){
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
 	ESP_LOGI("Http server", "Http request: \n\turl: \"/mac\" \n\tmethod: POST\n");
 	char str_resp[12];
 
+    /* Open storage section from nvs flash */
 	esp_err_t err;
 	nvs_handle_t nvs_handle;
    	err = nvs_open("storage", NVS_READWRITE, &nvs_handle);
@@ -136,7 +146,7 @@ esp_err_t mac_post_handler(httpd_req_t *req){
 
 		char content[12];
 
-
+        /* Take request post data */
 	    size_t recv_size = req->content_len;
 	    
         if (recv_size != 12) {
@@ -158,11 +168,13 @@ esp_err_t mac_post_handler(httpd_req_t *req){
 	        return ESP_FAIL;
 	    }
 
+        /* Overwrite old destination mac address with a new one */
 	    write_mac_address(nvs_handle, content);
 
     	memcpy(str_resp, content, sizeof(content));
 	}
 
+    /* Send http response */
 	err = httpd_resp_send(req, str_resp, HTTPD_RESP_USE_STRLEN);
 	if (err != ESP_OK) {
     	ESP_LOGE("Http server", "Error (%s) send response (url: /mac, type: POST)", esp_err_to_name(err));
@@ -172,6 +184,7 @@ esp_err_t mac_post_handler(httpd_req_t *req){
 
 	return err;
 }
+/* Http option request to "/mac" path */
 esp_err_t mac_options_handler(httpd_req_t *req) {
     httpd_resp_set_type(req, "text/plain");
     httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
@@ -181,13 +194,14 @@ esp_err_t mac_options_handler(httpd_req_t *req) {
     httpd_resp_send(req, NULL, 0);
     return ESP_OK;
 }
-
-
+/* Get saved mac address from nvs flash */
 void update_mac_address(nvs_handle_t nvs_handle) {
 	esp_err_t err;
 	char possible_mac[12];
 	size_t string_size;
+    /* Get string size */
 	err = nvs_get_str(nvs_handle, "dest mac addr", NULL, &string_size);
+    /* Get whatever is saved in nvs flash */
 	err = nvs_get_str(nvs_handle, "dest mac addr", &possible_mac, &string_size);
 	switch (err) {
         case ESP_OK:
@@ -203,9 +217,7 @@ void update_mac_address(nvs_handle_t nvs_handle) {
     }
     nvs_close(nvs_handle);
 }
-
-
-
+/* Get html site, get mac address and set all configuration about http server */
 void http_server_start(nvs_handle_t nvs_handle){
 
     get_index_site();
